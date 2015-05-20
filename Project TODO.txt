@@ -1,0 +1,5 @@
+TODO
+
+1)  Change Chunk to a non-component which can optionally point to a GameObject (if instantiated)
+2)  Change 3d array of block prototype to 3d array of bytes which point into an array of the different block prototypes.
+3)  Parametrize generator function such that it can be externalized.
