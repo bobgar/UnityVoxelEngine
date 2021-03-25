@@ -1,0 +1,67 @@
+﻿#pragma kernel Cubes
+#include "/Libs/Noise.compute"
+
+// Noise settings
+static const int numThreads = 8;
+static const float max = 0.86602540378443864676372317075294;
+static const float max2 = 1.7320508075688772935274463415059;
+
+RWStructuredBuffer<int> points;
+int numPointsPerAxis;
+float3 offset;
+float noiseScale;
+
+int indexFromCoord(uint x, uint y, uint z) {
+	return z * numPointsPerAxis * numPointsPerAxis + y * numPointsPerAxis + x;
+}
+
+
+[numthreads(numThreads,numThreads,numThreads)]
+void Cubes (int3 id : SV_DispatchThreadID)
+{
+    if (id.x >= numPointsPerAxis || id.y >= numPointsPerAxis || id.z >= numPointsPerAxis) {
+        return;
+    }
+
+    float3 pos = offset + id / float(numPointsPerAxis);
+    float offsetNoise = 0;
+
+    float noise = 0;
+
+    float frequency = noiseScale/100;
+    float amplitude = 1;
+    float weight = 1;
+
+	float perY = id.y / float(numPointsPerAxis);
+
+	//3D simplex noise
+	float simp3D = snoise(pos);
+	float perSimp3D = (simp3D + max) / max2;
+
+	//2D simplex noise (3D but constrainted as the slice at 0)
+	float3 pos2d = pos;
+	pos2d.y = 0;
+	float simp2D = snoise(pos2d);
+	float perSimp2D = (simp2D + max) / max2;
+
+	int finalVal = 0;
+
+	if (perY - (perSimp2D / 2) > 0 && (perY * 1.2) - perSimp3D <= 0)
+	{
+		if (perY > perSimp2D)
+			finalVal = 1;
+		else
+			finalVal = 2;
+	}
+	else if (perSimp3D > .1f)
+	{
+		finalVal = 3;
+	}
+	else  if (perSimp3D > .05f)
+	{
+		finalVal = 2;
+	}
+    
+    int index = indexFromCoord(id.x,id.y,id.z);
+    points[index] = finalVal;
+}

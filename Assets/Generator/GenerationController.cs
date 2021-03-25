@@ -2,18 +2,15 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Random = UnityEngine.Random;
-using System.Threading;
-using UnityEngine.UI;
 
 public class GenerationController : MonoBehaviour {
+
+	public ComputeShader blockShader;
 
 	private byte curBlockSelection = 1;
 	private Texture dirtTexture;
 	private Texture stoneTexture;
 	private Texture sandTexture;
-
-	private List<Thread> threads = new List<Thread> ();
-	public int maxThreads = 8;
 
 	public int viewDistance = 6;
 	private int generationDistance;
@@ -40,6 +37,8 @@ public class GenerationController : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+		ChunkGenerator.blockShader = blockShader;
+
 		generationDistance = viewDistance +2;
 		initializeDistance = generationDistance + 1;
 		material = Resources.Load("Materials/GameWorld", typeof(Material)) as Material;
@@ -119,10 +118,6 @@ public class GenerationController : MonoBehaviour {
 		int chunkX =  player.transform.position.x >= 0 ? (int)((player.transform.position.x / ChunkSizeX)) : ((int)(player.transform.position.x / ChunkSizeX)) - 1;
 		int chunkZ =  player.transform.position.z >= 0 ? (int)((player.transform.position.z / ChunkSizeZ)) : ((int)(player.transform.position.z / ChunkSizeZ)) - 1;
 
-		for (int i = threads.Count-1; i >= 0; i--) {
-			if(!threads[i].IsAlive)
-				threads.RemoveAt (i);
-		}
 
 		//Debug.Log ("cx = " + chunkX + "  cy = " + chunkZ);
 		if (frameCount % 2 == 0) {
@@ -139,16 +134,13 @@ public class GenerationController : MonoBehaviour {
 		if (frameCount % 2 == 1) {
 			for (int x = chunkX - (generationDistance); x <= chunkX + (generationDistance); x++) {
 				for (int z = chunkZ - (generationDistance); z <= chunkZ + (generationDistance); z++) {
-					if (threads.Count < maxThreads && chunkMap.ContainsKey (x + "," + z) && chunkMap [x + "," + z].isReadyToGenerate) {
+					if (chunkMap.ContainsKey (x + "," + z) && chunkMap [x + "," + z].isReadyToGenerate) {
 						chunkMap [x + "," + z].isReadyToGenerate = false;
 						chunkMap [x + "," + z].isGenerating = true;
 						//StartCoroutine(GenerateChunk(x,z));
 
 						ChunkGenerationController cg = new ChunkGenerationController (x, z, ChunkSizeX, ChunkSizeY, ChunkSizeZ, generators);
-						Thread oThread = new Thread (new ThreadStart (cg.GenerateChunk));
-						oThread.Start ();
-
-						threads.Add (oThread);
+						cg.GenerateChunk();						
 						//return;
 					}
 
@@ -181,14 +173,9 @@ public class GenerationController : MonoBehaviour {
 							StartCoroutine(ShowChunk(x, z));
 							//return;
 						}
-						else if(threads.Count < maxThreads && !c.isInitializingArrays)
+						else if(!c.isInitializingArrays)
 						{
 							c.isInitializingArrays = true;
-							Thread oThread = new Thread(new ThreadStart( c.InitializeArrays ));
-							oThread.Start();
-
-							threads.Add(oThread);
-							//return;
 						}
                     }
 				}
@@ -212,7 +199,7 @@ public class GenerationController : MonoBehaviour {
 		for (int i = 0; i < generators.Length; i++) {
 
 			//generators [i].Generate (c) ;
-			new ChunkGenerator(generators[i]).Generate(c, null);
+			new ChunkGenerator(generators[i]).Generate(c);
 		}
 
 		c.isGenerating = false;
@@ -288,17 +275,17 @@ public class GenerationController : MonoBehaviour {
 							{
 								if(k < 0)
 								{
-									chunkMap[(chunkX-1)+","+(chunkZ-1)].blocks[i+ChunkSizeX, j,k+ChunkSizeZ] = curBlockSelection;
+									chunkMap[(chunkX-1)+","+(chunkZ-1)].SetBlock(i+ChunkSizeX, j,k+ChunkSizeZ, curBlockSelection);
 									nxnz = true;
 								}
 								else if(k >= ChunkSizeZ)
 								{
-									chunkMap[(chunkX-1)+","+(chunkZ+1)].blocks[i+ChunkSizeX, j,k-ChunkSizeZ] = curBlockSelection;
+									chunkMap[(chunkX-1)+","+(chunkZ+1)].SetBlock(i+ChunkSizeX, j,k-ChunkSizeZ, curBlockSelection);
 									nxpz = true;
 								}
 								else
 								{
-									chunkMap[(chunkX-1)+","+chunkZ].blocks[i+ChunkSizeX, j,k] = curBlockSelection;
+									chunkMap[(chunkX-1)+","+chunkZ].SetBlock(i+ChunkSizeX, j,k, curBlockSelection);
 								}
 
 								nx = true;
@@ -307,34 +294,34 @@ public class GenerationController : MonoBehaviour {
 							{
 								if(k < 0)
 								{
-									chunkMap[(chunkX+1)+","+(chunkZ-1)].blocks[i-ChunkSizeX, j,k+ChunkSizeZ] = curBlockSelection;
+									chunkMap[(chunkX+1)+","+(chunkZ-1)].SetBlock(i-ChunkSizeX, j,k+ChunkSizeZ, curBlockSelection);
 									pxnz = true;
 								}
 								else if(k >= ChunkSizeZ)
 								{
-									chunkMap[(chunkX+1)+","+(chunkZ+1)].blocks[i-ChunkSizeX, j,k-ChunkSizeZ] = curBlockSelection;
+									chunkMap[(chunkX+1)+","+(chunkZ+1)].SetBlock(i-ChunkSizeX, j,k-ChunkSizeZ, curBlockSelection);
 									pxpz = true;
 								}
 								else
 								{
-									chunkMap[(chunkX+1)+","+chunkZ].blocks[i-ChunkSizeX, j,k] = curBlockSelection;
+									chunkMap[(chunkX+1)+","+chunkZ].SetBlock(i-ChunkSizeX, j,k , curBlockSelection);
 								}
 
 								px = true;
 							}
 							else if(k < 0)
 							{
-								chunkMap[chunkX+","+(chunkZ-1)].blocks[i, j,k+ChunkSizeZ] = curBlockSelection;
+								chunkMap[chunkX+","+(chunkZ-1)].SetBlock(i, j,k+ChunkSizeZ, curBlockSelection);
 								nz = true;
 							}
 							else if(k >= ChunkSizeZ)
 							{
-								chunkMap[chunkX+","+(chunkZ+1)].blocks[i, j,k-ChunkSizeZ] = curBlockSelection;
+								chunkMap[chunkX+","+(chunkZ+1)].SetBlock(i, j,k-ChunkSizeZ, curBlockSelection);
 								pz = true;
 							}
 							else
 							{
-								chunkMap[chunkX+","+chunkZ].blocks[i, j,k] = curBlockSelection;
+								chunkMap[chunkX+","+chunkZ].SetBlock(i, j,k, curBlockSelection);
 								if(i == 0)
 									nx = true;
 								if(k == 0)
@@ -405,7 +392,7 @@ public class ChunkGenerationController
 
 		c.isGenerating = true;
 		for (int i = 0; i < generators.Length; i++) {
-			new ChunkGenerator(generators[i]).Generate(c, null);
+			new ChunkGenerator(generators[i]).Generate(c);
 			//generators [i].Generate (c);
 		}
 

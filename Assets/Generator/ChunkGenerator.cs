@@ -5,33 +5,79 @@ using CoherentNoise.Generation;
 using CoherentNoise.Generation.Fractal;
 
 using System.Reflection;
+using System.Collections.Generic;
 
 [SerializeField]
 public class ChunkGenerator
 {
+	public static ComputeShader blockShader;
+
 	public byte[] blockTypes;
-	public Generator perlin;
-	private static MethodInfo generateMethod;
-	private static object classInstance;
-	private System.Random rand;
+	//public Generator perlin;
+	//private static MethodInfo generateMethod;
+	//private static object classInstance;
+	//private System.Random rand;
+	private int seed;
+
+	//**** COMPUTE SHADER STUFF ****//
+	const int threadGroupSize = 8;
+	public float noiseScale = 1;	
+	public float weightMultiplier = 1;
+	protected List<ComputeBuffer> buffersToRelease;
+	ComputeBuffer pointsBuffer;
 
 	public ChunkGenerator (GeneratorSpec gs)
 	{
-		rand = new System.Random ();
-		perlin = new PinkNoise(new GradientNoise(gs.seed)).Scale(.01f, .01f, .01f);		
+		//rand = new System.Random ();
+		//perlin = new PinkNoise(new GradientNoise(gs.seed)).Scale(.01f, .01f, .01f);		
 		blockTypes = gs.blockTypes;
+		seed = gs.seed;
 	}
 
-	public void Generate(Chunk c, String generationCode)
+	public void Generate(Chunk c)
 	{
 		int sizeX = c.chunkSizeX;
 		int sizeY = c.chunkSizeY;
 		int sizeZ = c.chunkSizeZ;
 
+		int numPoints = sizeX * sizeY * sizeZ;
+
 		int offsetX = c.chunkX * sizeX;
 		int offsetZ = c.chunkZ * sizeZ;
 
-		for(int localX = 0; localX < sizeX; localX++)
+		pointsBuffer = new ComputeBuffer(numPoints, sizeof(int));
+
+		//**** COMPUTE SHADER STUFF ****//
+		buffersToRelease = new List<ComputeBuffer>();
+
+		blockShader.SetFloat("noiseScale", noiseScale);
+
+		int numThreadsPerAxis = Mathf.CeilToInt(sizeX / (float)threadGroupSize);
+		// Points buffer is populated inside shader with pos (xyz) + density (w).
+		// Set paramaters
+		blockShader.SetBuffer(0, "points", pointsBuffer);
+		blockShader.SetInt("numPointsPerAxis", sizeX);
+		blockShader.SetVector("offset", new Vector4(offsetX, 0, offsetZ));
+
+		// Dispatch shader
+		blockShader.Dispatch(0, numThreadsPerAxis, numThreadsPerAxis, numThreadsPerAxis);
+
+		if (buffersToRelease != null)
+		{
+			foreach (var b in buffersToRelease)
+			{
+				b.Release();
+			}
+		}
+
+		pointsBuffer.GetData(c.blocks);
+
+		// Return voxel data buffer so it can be used to generate mesh
+		//return pointsBuffer;
+
+		//************ TODO!  Do something with points buffer!
+
+		/*for(int localX = 0; localX < sizeX; localX++)
 		{
 			for(int localZ = 0; localZ < sizeZ; localZ++)
 			{
@@ -101,10 +147,10 @@ public class ChunkGenerator
 					generateTree(c,localX,localZ, highestPoint);
 				}
 			}
-		}
+		}*/
 	}
 
-	private void generateTree(Chunk c, int x, int z, int y)
+	/*private void generateTree(Chunk c, int x, int z, int y)
 	{
 		//Only place a tree if on dirt
 		if (c.blocks [x, y, z] != blockTypes [1])
@@ -146,12 +192,12 @@ public class ChunkGenerator
 		}
 		//put a top on the tree
 		c.blocks[x, y+treeHeight, z] = blockTypes[5];
-	}
+	}*/
 
-	private float Rand()
+	/*private float Rand()
 	{
 		return (float) rand.NextDouble();
-	}
+	}*/
 
 	private float Sin(float x)
 	{

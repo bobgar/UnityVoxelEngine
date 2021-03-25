@@ -12,11 +12,11 @@ using System.Collections;
 using System.Collections.Generic;
 public class BlockLibrary
 {
-	public static Dictionary<Byte, Block> BlockDictionary;
+	public static Dictionary<int, Block> BlockDictionary;
 
 	public static void initialize()
 	{
-		BlockDictionary = new Dictionary<byte, Block>();
+		BlockDictionary = new Dictionary<int, Block>();
 		BlockDictionary.Add (0, null);
 		BlockDictionary.Add (1, new Block ());
 		Block b = new Block ();
