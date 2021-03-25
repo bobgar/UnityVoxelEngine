@@ -2,20 +2,9 @@ using UnityEngine;
 using System;
 using CoherentNoise;
 using CoherentNoise.Generation;
-using CoherentNoise.Generation.Displacement;
 using CoherentNoise.Generation.Fractal;
-using CoherentNoise.Generation.Modification;
-using CoherentNoise.Generation.Patterns;
-using CoherentNoise.Texturing;
-using System.Collections;
-using System.Collections.Generic;
 
-using System.Linq;
-using System.Text;
-using System.CodeDom;
-using System.CodeDom.Compiler;
 using System.Reflection;
-using System;
 
 [SerializeField]
 public class ChunkGenerator
