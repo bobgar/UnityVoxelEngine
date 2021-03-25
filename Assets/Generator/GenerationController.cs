@@ -170,12 +170,13 @@ public class GenerationController : MonoBehaviour {
                     {
 						if(c.isReadyToView)
 						{
+							Debug.Log("GET READY TO SHOW!");
 							StartCoroutine(ShowChunk(x, z));
 							//return;
 						}
 						else if(!c.isInitializingArrays)
-						{
-							c.isInitializingArrays = true;
+						{ 						
+							c.InitializeArrays();
 						}
                     }
 				}
