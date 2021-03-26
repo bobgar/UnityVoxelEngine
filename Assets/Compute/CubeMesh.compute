@@ -2,16 +2,148 @@
 #pragma kernel CubeMesh
 
 static const int numThreads = 8;
-AppendStructuredBuffer<Triangle> triangles;
+int numPointsPerAxis;
 RWStructuredBuffer<int> points;
 
-struct Triangle {
-    float3 vertexC;
-    float3 vertexB;
-    float3 vertexA;
-};
+AppendStructuredBuffer<float3> verts;
+AppendStructuredBuffer<float2> uvs;
+AppendStructuredBuffer<int> indecies;
 
+int indexFromCoord(uint x, uint y, uint z) {
+	return z * numPointsPerAxis * numPointsPerAxis + y * numPointsPerAxis + x;
+}
 
+					/*Block bp = BlockLibrary.BlockDictionary [blocks [GetIndex( x, y, z)]];
+					if (bp != null && ! bp.IsTransparent) {
+						if (negXTransparent (x, y, z)) {
+							verts.Add (new Vector3 (x, y, z + 1));
+							verts.Add (new Vector3 (x, y + 1, z));
+							verts.Add (new Vector3 (x, y, z));
+							verts.Add (new Vector3 (x, y + 1, z + 1));
+
+							uvs.Add (bp.negXUV.lowerLeft);
+							uvs.Add (bp.negXUV.upperRight);
+							uvs.Add (bp.negXUV.lowerRight);
+							uvs.Add (bp.negXUV.upperLeft);
+							
+							indices.Add (curVert);
+							indices.Add (curVert + 3);
+							indices.Add (curVert + 1);
+							
+							indices.Add (curVert);
+							indices.Add (curVert + 1);
+							indices.Add (curVert + 2);
+							
+							curVert += 4;
+						}
+						if (posXTransparent (x, y, z)) {
+							verts.Add (new Vector3 (x + 1, y, z + 1));
+							verts.Add (new Vector3 (x + 1, y + 1, z));
+							verts.Add (new Vector3 (x + 1, y, z));
+							verts.Add (new Vector3 (x + 1, y + 1, z + 1));
+
+							uvs.Add (bp.posXUV.lowerLeft);
+							uvs.Add (bp.posXUV.upperRight);
+							uvs.Add (bp.posXUV.lowerRight);
+							uvs.Add (bp.posXUV.upperLeft);
+							
+							indices.Add (curVert);
+							indices.Add (curVert + 1);
+							indices.Add (curVert + 3);
+							
+							indices.Add (curVert);
+							indices.Add (curVert + 2);
+							indices.Add (curVert + 1);
+							
+							curVert += 4;
+						}
+
+						if (negYTransparent (x, y, z)) {
+							verts.Add (new Vector3 (x, y, z));
+							verts.Add (new Vector3 (x + 1, y, z + 1));
+							verts.Add (new Vector3 (x + 1, y, z));
+							verts.Add (new Vector3 (x, y, z + 1));
+							
+							uvs.Add (bp.negYUV.lowerLeft);
+							uvs.Add (bp.negYUV.upperRight);
+							uvs.Add (bp.negYUV.lowerRight);
+							uvs.Add (bp.negYUV.upperLeft);
+
+							
+							indices.Add (curVert);
+							indices.Add (curVert + 2);
+							indices.Add (curVert + 1);
+							
+							indices.Add (curVert);
+							indices.Add (curVert + 1);
+							indices.Add (curVert + 3);
+							
+							curVert += 4;
+						}
+						if (posYTransparent (x, y, z)) {
+							verts.Add (new Vector3 (x, y + 1, z));
+							verts.Add (new Vector3 (x + 1, y + 1, z + 1));
+							verts.Add (new Vector3 (x + 1, y + 1, z));
+							verts.Add (new Vector3 (x, y + 1, z + 1));
+
+							uvs.Add (bp.posYUV.lowerLeft);
+							uvs.Add (bp.posYUV.upperRight);
+							uvs.Add (bp.posYUV.lowerRight);
+							uvs.Add (bp.posYUV.upperLeft);
+							
+							indices.Add (curVert);
+							indices.Add (curVert + 1);
+							indices.Add (curVert + 2);
+							
+							indices.Add (curVert);
+							indices.Add (curVert + 3);
+							indices.Add (curVert + 1);
+							
+							curVert += 4;
+						}
+
+						if (negZTransparent (x, y, z)) {
+							verts.Add (new Vector3 (x, y, z));
+							verts.Add (new Vector3 (x + 1, y + 1, z));
+							verts.Add (new Vector3 (x + 1, y, z));
+							verts.Add (new Vector3 (x, y + 1, z));
+							
+							uvs.Add (bp.negZUV.lowerLeft);
+							uvs.Add (bp.negZUV.upperRight);
+							uvs.Add (bp.negZUV.lowerRight);
+							uvs.Add (bp.negZUV.upperLeft);
+							
+							indices.Add (curVert);
+							indices.Add (curVert + 1);
+							indices.Add (curVert + 2);
+							
+							indices.Add (curVert);
+							indices.Add (curVert + 3);
+							indices.Add (curVert + 1);
+							
+							curVert += 4;
+						}
+						if (posZTransparent (x, y, z)) {
+							verts.Add (new Vector3 (x, y, z + 1));
+							verts.Add (new Vector3 (x + 1, y + 1, z + 1));
+							verts.Add (new Vector3 (x + 1, y, z + 1));
+							verts.Add (new Vector3 (x, y + 1, z + 1));
+							
+							uvs.Add (bp.posZUV.lowerLeft);
+							uvs.Add (bp.posZUV.upperRight);
+							uvs.Add (bp.posZUV.lowerRight);
+							uvs.Add (bp.posZUV.upperLeft);
+							
+							indices.Add (curVert);
+							indices.Add (curVert + 2);
+							indices.Add (curVert + 1);
+							
+							indices.Add (curVert);
+							indices.Add (curVert + 1);
+							indices.Add (curVert + 3);
+							
+							curVert += 4;
+						}*/
 [numthreads(numThreads, numThreads, numThreads)]
 void CubeMesh (uint3 id : SV_DispatchThreadID)
 {
