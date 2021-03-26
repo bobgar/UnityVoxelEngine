@@ -36,14 +36,10 @@ public class ChunkGenerator
 
 	public void Generate(Chunk c)
 	{
-		int sizeX = c.chunkSizeX;
-		int sizeY = c.chunkSizeY;
-		int sizeZ = c.chunkSizeZ;
+		int size = c.chunkSize;
 
-		int numPoints = sizeX * sizeY * sizeZ;
-
-		int offsetX = c.chunkX * sizeX;
-		int offsetZ = c.chunkZ * sizeZ;
+		int PointsPerAxis = size + 2;
+		int numPoints = PointsPerAxis * PointsPerAxis * PointsPerAxis;		
 
 		pointsBuffer = new ComputeBuffer(numPoints, sizeof(int));
 
@@ -52,12 +48,11 @@ public class ChunkGenerator
 
 		blockShader.SetFloat("noiseScale", noiseScale);
 
-		int numThreadsPerAxis = Mathf.CeilToInt(sizeX / (float)threadGroupSize);
+		int numThreadsPerAxis = Mathf.CeilToInt(PointsPerAxis / (float)threadGroupSize);		
 		// Points buffer is populated inside shader with pos (xyz) + density (w).
 		// Set paramaters
 		blockShader.SetBuffer(0, "points", pointsBuffer);
-		blockShader.SetInt("numPointsPerAxis", sizeX);
-		Debug.Log(offsetX + " , " + offsetZ);
+		blockShader.SetInt("numPointsPerAxis", PointsPerAxis);		
 		blockShader.SetVector("offset", new Vector4(c.chunkX, 0, c.chunkZ));
 
 		// Dispatch shader

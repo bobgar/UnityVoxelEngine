@@ -1,0 +1,19 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CubeMesh
+
+static const int numThreads = 8;
+AppendStructuredBuffer<Triangle> triangles;
+RWStructuredBuffer<int> points;
+
+struct Triangle {
+    float3 vertexC;
+    float3 vertexB;
+    float3 vertexA;
+};
+
+
+[numthreads(numThreads, numThreads, numThreads)]
+void CubeMesh (uint3 id : SV_DispatchThreadID)
+{
+    
+}

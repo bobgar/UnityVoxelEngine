@@ -13,16 +13,12 @@ public class BlockUVLibrary
 	{
 		UVMapLibrary = new Dictionary<String, UVMapObject>();
 		TextAsset ta = Resources.Load<TextAsset>("textureSheet");
-		Debug.Log(ta);
-		Debug.Log(ta.text);
 
 		//TextureJsonObject data = JsonMapper.ToObject<TextureJsonObject>(ta.text);
 		JsonData data = JsonMapper.ToObject (ta.text);
 		
 		float w = (int)data["meta"]["size"]["w"];
 		float h = (int)data["meta"]["size"]["h"];
-
-		Debug.Log ("w = " + w + "  h = " + h);
 
 		foreach(String k in (data["frames"] as IDictionary).Keys )
 		{
@@ -31,8 +27,6 @@ public class BlockUVLibrary
 			cur.upperRight = new Vector2 (((int)data["frames"][k]["frame"]["x"] + (int)data["frames"][k]["frame"]["w"]) / w, 1.0f - (int)data["frames"][k]["frame"]["y"] / h);
 			cur.lowerLeft = new Vector2 ((int)data["frames"][k]["frame"]["x"] / w, 1.0f - ((int)data["frames"][k]["frame"]["y"] + (int)data["frames"][k]["frame"]["h"]) / h);
 			cur.lowerRight = new Vector2 (((int)data["frames"][k]["frame"]["x"] + (int)data["frames"][k]["frame"]["w"]) / w, 1.0f - ((int)data["frames"][k]["frame"]["y"] + (int)data["frames"][k]["frame"]["h"]) / h);
-
-			Debug.Log ("ll = " +cur.lowerLeft.x +" , "+ cur.lowerLeft.y);
 
 			UVMapLibrary.Add(k, cur);
 		}

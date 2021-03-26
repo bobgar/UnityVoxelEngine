@@ -6,6 +6,7 @@ using Random = UnityEngine.Random;
 public class GenerationController : MonoBehaviour {
 
 	public ComputeShader blockShader;
+	public ComputeShader meshShader;
 
 	private byte curBlockSelection = 1;
 	private Texture dirtTexture;
@@ -16,10 +17,7 @@ public class GenerationController : MonoBehaviour {
 	private int generationDistance;
 	private int initializeDistance;
 	
-	public int ChunkSizeX = 8;
-	public int ChunkSizeY = 64;
-	public int ChunkSizeZ = 8;
-
+	public int ChunkSize = 32;
 
 	public static Material material;
 
@@ -86,11 +84,11 @@ public class GenerationController : MonoBehaviour {
 	{
 		player.SetActive (false);
 
-		chunkMap.Add("0,0", new Chunk(0, 0, ChunkSizeX, ChunkSizeY, ChunkSizeZ));
-		chunkMap.Add("1,0", new Chunk(1, 0, ChunkSizeX, ChunkSizeY, ChunkSizeZ));
-		chunkMap.Add("0,1", new Chunk(0, 1, ChunkSizeX, ChunkSizeY, ChunkSizeZ));
-		chunkMap.Add("-1,0", new Chunk(-1, 0, ChunkSizeX, ChunkSizeY, ChunkSizeZ));
-		chunkMap.Add("0,-1", new Chunk(0, -1, ChunkSizeX, ChunkSizeY, ChunkSizeZ));
+		chunkMap.Add("0,0", new Chunk(0, 0, ChunkSize));
+		chunkMap.Add("1,0", new Chunk(1, 0, ChunkSize));
+		chunkMap.Add("0,1", new Chunk(0, 1, ChunkSize));
+		chunkMap.Add("-1,0", new Chunk(-1, 0, ChunkSize));
+		chunkMap.Add("0,-1", new Chunk(0, -1, ChunkSize));
 
 		GenerateChunk (0, 0);
 		GenerateChunk (1, 0);
@@ -99,10 +97,9 @@ public class GenerationController : MonoBehaviour {
 		GenerateChunk (0, -1);
 
 		yield return StartCoroutine (ShowChunk (0, 0));
-
-		Debug.Log ("INITIALIZATION COMPLETE!!!");
+		
 		player.SetActive (true);
-		player.transform.position = new Vector3 (ChunkSizeX * .5f, ChunkSizeY + 10, ChunkSizeZ * .5f);
+		player.transform.position = new Vector3 (ChunkSize * .5f, ChunkSize + 10, ChunkSize * .5f);
 		initializing = false;
 	}
 
@@ -115,16 +112,14 @@ public class GenerationController : MonoBehaviour {
 		if (initializing)
 			return;
 
-		int chunkX =  player.transform.position.x >= 0 ? (int)((player.transform.position.x / ChunkSizeX)) : ((int)(player.transform.position.x / ChunkSizeX)) - 1;
-		int chunkZ =  player.transform.position.z >= 0 ? (int)((player.transform.position.z / ChunkSizeZ)) : ((int)(player.transform.position.z / ChunkSizeZ)) - 1;
-
-
-		//Debug.Log ("cx = " + chunkX + "  cy = " + chunkZ);
+		int chunkX =  player.transform.position.x >= 0 ? (int)((player.transform.position.x / ChunkSize)) : ((int)(player.transform.position.x / ChunkSize)) - 1;
+		int chunkZ =  player.transform.position.z >= 0 ? (int)((player.transform.position.z / ChunkSize)) : ((int)(player.transform.position.z / ChunkSize)) - 1;
+		
 		if (frameCount % 2 == 0) {
 			for (int x = chunkX - (initializeDistance); x <= chunkX + (initializeDistance); x++) {
 				for (int z = chunkZ - (initializeDistance); z <= chunkZ + (initializeDistance); z++) {
 					if (! chunkMap.ContainsKey (x + "," + z)) {
-						Chunk c = new Chunk (x, z, ChunkSizeX, ChunkSizeY, ChunkSizeZ);
+						Chunk c = new Chunk (x, z, ChunkSize  );
 						chunkMap.Add (x + "," + z, c);
 					}
 				}
@@ -139,16 +134,16 @@ public class GenerationController : MonoBehaviour {
 						chunkMap [x + "," + z].isGenerating = true;
 						//StartCoroutine(GenerateChunk(x,z));
 
-						ChunkGenerationController cg = new ChunkGenerationController (x, z, ChunkSizeX, ChunkSizeY, ChunkSizeZ, generators);
-						cg.GenerateChunk();						
-						//return;
+						ChunkGenerationController cg = new ChunkGenerationController (x, z, ChunkSize, generators);
+						cg.GenerateChunk();
+						return;
 					}
 
 					if (x == chunkX - (viewDistance + 1) || x == chunkX + (viewDistance + 1)
 						|| z == chunkZ - (viewDistance + 1) || z == chunkZ + (viewDistance + 1)) {
 						if (chunkMap.ContainsKey (x + "," + z) && chunkMap [x + "," + z].gameObject != null && chunkMap [x + "," + z].isGenerating == false) {
 							DestroyChunk (x, z);
-							//return;
+							return;
 						}
 					}
 				}
@@ -169,8 +164,7 @@ public class GenerationController : MonoBehaviour {
 					   )
                     {
 						if(c.isReadyToView)
-						{
-							Debug.Log("GET READY TO SHOW!");
+						{							
 							StartCoroutine(ShowChunk(x, z));
 							//return;
 						}
@@ -190,9 +184,8 @@ public class GenerationController : MonoBehaviour {
 	}
 
 	public void GenerateChunk(int x, int z)
-	{
-		Debug.Log("Generating " +x +" , " + z);
-		//Chunk c = new Chunk(x, z, ChunkSizeX, ChunkSizeY, ChunkSizeZ);						
+	{		
+		//Chunk c = new Chunk(x, z, ChunkSize, ChunkSize, ChunkSize);						
 		Chunk c = chunkMap [x + "," + z];
 
 		//chunkMap.Add (x + "," + z, c);
@@ -245,17 +238,17 @@ public class GenerationController : MonoBehaviour {
 			int x = (int)v.x;
 			int y = (int)v.y;
 			int z = (int)v.z;
-			int chunkX = (int)(x / ChunkSizeX);
-			int chunkZ = (int)(z / ChunkSizeZ);
-			int localX = x % ChunkSizeX;
+			int chunkX = (int)(x / ChunkSize);
+			int chunkZ = (int)(z / ChunkSize);
+			int localX = x % ChunkSize;
 			if (localX < 0) {
-				localX += ChunkSizeX;
+				localX += ChunkSize;
 				chunkX -=1;
 			}
-			int localZ = z % ChunkSizeZ;
+			int localZ = z % ChunkSize;
 			if (localZ < 0)
 			{
-				localZ += ChunkSizeZ;
+				localZ += ChunkSize;
 				chunkZ -=1;
 			}
 			//Chunk c = chunkMap[chunkX+","+ chunkZ];
@@ -267,7 +260,7 @@ public class GenerationController : MonoBehaviour {
 			{
 				for(var j = y-1; j<= y +1; j++)
 				{
-					if(j >= 0 && j < ChunkSizeY)
+					if(j >= 0 && j < ChunkSize)
 					{
 					
 						for(var k = localZ-1; k<= localZ +1; k++)
@@ -276,48 +269,48 @@ public class GenerationController : MonoBehaviour {
 							{
 								if(k < 0)
 								{
-									chunkMap[(chunkX-1)+","+(chunkZ-1)].SetBlock(i+ChunkSizeX, j,k+ChunkSizeZ, curBlockSelection);
+									chunkMap[(chunkX-1)+","+(chunkZ-1)].SetBlock(i+ChunkSize, j,k+ChunkSize, curBlockSelection);
 									nxnz = true;
 								}
-								else if(k >= ChunkSizeZ)
+								else if(k >= ChunkSize)
 								{
-									chunkMap[(chunkX-1)+","+(chunkZ+1)].SetBlock(i+ChunkSizeX, j,k-ChunkSizeZ, curBlockSelection);
+									chunkMap[(chunkX-1)+","+(chunkZ+1)].SetBlock(i+ChunkSize, j,k-ChunkSize, curBlockSelection);
 									nxpz = true;
 								}
 								else
 								{
-									chunkMap[(chunkX-1)+","+chunkZ].SetBlock(i+ChunkSizeX, j,k, curBlockSelection);
+									chunkMap[(chunkX-1)+","+chunkZ].SetBlock(i+ChunkSize, j,k, curBlockSelection);
 								}
 
 								nx = true;
 							}
-							else if(i >= ChunkSizeX)
+							else if(i >= ChunkSize)
 							{
 								if(k < 0)
 								{
-									chunkMap[(chunkX+1)+","+(chunkZ-1)].SetBlock(i-ChunkSizeX, j,k+ChunkSizeZ, curBlockSelection);
+									chunkMap[(chunkX+1)+","+(chunkZ-1)].SetBlock(i-ChunkSize, j,k+ChunkSize, curBlockSelection);
 									pxnz = true;
 								}
-								else if(k >= ChunkSizeZ)
+								else if(k >= ChunkSize)
 								{
-									chunkMap[(chunkX+1)+","+(chunkZ+1)].SetBlock(i-ChunkSizeX, j,k-ChunkSizeZ, curBlockSelection);
+									chunkMap[(chunkX+1)+","+(chunkZ+1)].SetBlock(i-ChunkSize, j,k-ChunkSize, curBlockSelection);
 									pxpz = true;
 								}
 								else
 								{
-									chunkMap[(chunkX+1)+","+chunkZ].SetBlock(i-ChunkSizeX, j,k , curBlockSelection);
+									chunkMap[(chunkX+1)+","+chunkZ].SetBlock(i-ChunkSize, j,k , curBlockSelection);
 								}
 
 								px = true;
 							}
 							else if(k < 0)
 							{
-								chunkMap[chunkX+","+(chunkZ-1)].SetBlock(i, j,k+ChunkSizeZ, curBlockSelection);
+								chunkMap[chunkX+","+(chunkZ-1)].SetBlock(i, j,k+ChunkSize, curBlockSelection);
 								nz = true;
 							}
-							else if(k >= ChunkSizeZ)
+							else if(k >= ChunkSize)
 							{
-								chunkMap[chunkX+","+(chunkZ+1)].SetBlock(i, j,k-ChunkSizeZ, curBlockSelection);
+								chunkMap[chunkX+","+(chunkZ+1)].SetBlock(i, j,k-ChunkSize, curBlockSelection);
 								pz = true;
 							}
 							else
@@ -327,9 +320,9 @@ public class GenerationController : MonoBehaviour {
 									nx = true;
 								if(k == 0)
 									nz = true;
-								if(i == ChunkSizeX-1)
+								if(i == ChunkSize-1)
 									px = true;
-								if(k == ChunkSizeZ-1)
+								if(k == ChunkSize-1)
 									pz = true;
 							}
 						}
@@ -371,18 +364,16 @@ public class GenerationController : MonoBehaviour {
 
 public class ChunkGenerationController
 {
-	private int x, z, ChunkSizeX, ChunkSizeY, ChunkSizeZ;
+	private int x, z, chunkSize;
 	private GeneratorSpec[] generators;
 
 	Chunk c;
 
-	public ChunkGenerationController(int x , int z, int chunkSizeX, int chunkSizeY, int chunkSizeZ, GeneratorSpec[] generators)
+	public ChunkGenerationController(int x , int z, int chunkSize, GeneratorSpec[] generators)
 	{
 		this.generators = generators;
 		this.x = x; this.z = z;
-		this.ChunkSizeX = chunkSizeX;
-		this.ChunkSizeY = chunkSizeY;
-		this.ChunkSizeZ = chunkSizeZ;
+		this.chunkSize = chunkSize;
 	}
 
 	public void GenerateChunk()

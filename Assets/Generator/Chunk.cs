@@ -12,9 +12,8 @@ public class Chunk {
 
 	public int chunkX;
 	public int chunkZ;
-	public int chunkSizeX;
-	public int chunkSizeY;
-	public int chunkSizeZ;
+	public int chunkSize;
+	public int arrayDim;
 
 	public int[] blocks;
 
@@ -37,7 +36,7 @@ public class Chunk {
 
 	public int GetIndex(int x, int y, int z)
     {
-		return z * chunkSizeX * chunkSizeY + y * chunkSizeX + x;
+		return (z+1) * arrayDim * arrayDim + (y+1) * arrayDim + (x+1);
     }
 
 	public void SetBlock(int x, int y, int z, int val)
@@ -45,14 +44,13 @@ public class Chunk {
 		blocks[GetIndex(x, y, z)] = val;	
     }
 
-	public Chunk(int chunkX, int chunkY, int chunkSizeX, int chunkSizeY, int chunkSizeZ)
+	public Chunk(int chunkX, int chunkY, int chunkSize)
 	{
-		this.chunkSizeX = chunkSizeX;
-		this.chunkSizeY = chunkSizeY;
-		this.chunkSizeZ = chunkSizeZ;
+		this.chunkSize = chunkSize;
+		this.arrayDim = chunkSize + 2;
 		this.chunkX = chunkX;
 		this.chunkZ = chunkY;
-		blocks = new int[chunkSizeX * chunkSizeY * chunkSizeZ];
+		blocks = new int[arrayDim * arrayDim * arrayDim];
 
 		isReadyToGenerate = true;
 	}
@@ -77,10 +75,10 @@ public class Chunk {
 		posZChunk = GenerationController.chunkMap [chunkX + "," + (chunkZ + 1)];
 		negZChunk = GenerationController.chunkMap [chunkX + "," + (chunkZ - 1)];
 
-		for (int x = 0; x < chunkSizeX; x++) {
+		for (int x = 0; x < chunkSize; x++) {
 			//yield return null;
-			for (int y = 0; y < chunkSizeY; y++) {
-				for (int z = 0; z < chunkSizeZ; z++) {
+			for (int y = 0; y < chunkSize; y++) {
+				for (int z = 0; z < chunkSize; z++) {
 					Block bp = BlockLibrary.BlockDictionary [blocks [GetIndex( x, y, z)]];
 					if (bp != null && ! bp.IsTransparent) {
 						if (negXTransparent (x, y, z)) {
@@ -231,7 +229,7 @@ public class Chunk {
 	{
 		initializingView = true;
 		gameObject = new GameObject ("Chunk " + chunkX + "  ,  " + chunkZ);
-		gameObject.transform.position = new Vector3( chunkX * chunkSizeX, 0 , chunkZ * chunkSizeZ);
+		gameObject.transform.position = new Vector3( chunkX * chunkSize, 0 , chunkZ * chunkSize);
 		//yield return null;
 		gameObject.AddComponent <MeshFilter>();
 		//yield return null;
@@ -306,14 +304,14 @@ public class Chunk {
 	public bool negXTransparent(int x, int y, int z)
 	{
 
-		return ((x == 0 && (BlockLibrary.BlockDictionary[negXChunk.blocks[GetIndex(chunkSizeX-1,y, z)]] == null || BlockLibrary.BlockDictionary[negXChunk.blocks[GetIndex(chunkSizeX-1,y, z)]].IsTransparent))
+		return ((x == 0 && (BlockLibrary.BlockDictionary[negXChunk.blocks[GetIndex(chunkSize-1,y, z)]] == null || BlockLibrary.BlockDictionary[negXChunk.blocks[GetIndex(chunkSize-1,y, z)]].IsTransparent))
 			|| (x > 0 && (BlockLibrary.BlockDictionary[blocks[GetIndex(x - 1, y, z)]] == null || BlockLibrary.BlockDictionary[blocks[GetIndex(x - 1, y, z)]].IsTransparent)));
 	}
 
 	public bool posXTransparent(int x, int y, int z)
 	{
-		return ((x == chunkSizeX-1 && (BlockLibrary.BlockDictionary[posXChunk.blocks[GetIndex(0,y, z)]] == null || BlockLibrary.BlockDictionary[posXChunk.blocks[GetIndex(0,y, z)]].IsTransparent))
-		        || (x < chunkSizeX-1 && (BlockLibrary.BlockDictionary[blocks[GetIndex(x + 1, y, z)]] == null || BlockLibrary.BlockDictionary[blocks[GetIndex(x + 1, y, z)]].IsTransparent)) );
+		return ((x == chunkSize-1 && (BlockLibrary.BlockDictionary[posXChunk.blocks[GetIndex(0,y, z)]] == null || BlockLibrary.BlockDictionary[posXChunk.blocks[GetIndex(0,y, z)]].IsTransparent))
+		        || (x < chunkSize-1 && (BlockLibrary.BlockDictionary[blocks[GetIndex(x + 1, y, z)]] == null || BlockLibrary.BlockDictionary[blocks[GetIndex(x + 1, y, z)]].IsTransparent)) );
 	}
 
 	public bool negYTransparent(int x, int y, int z)
@@ -323,18 +321,18 @@ public class Chunk {
 	
 	public bool posYTransparent(int x, int y, int z)
 	{
-		return ((y >= chunkSizeY-1 || BlockLibrary.BlockDictionary[blocks[GetIndex(x , y+ 1, z)]] == null || BlockLibrary.BlockDictionary[blocks[GetIndex(x , y+ 1, z)]].IsTransparent));
+		return ((y >= chunkSize-1 || BlockLibrary.BlockDictionary[blocks[GetIndex(x , y+ 1, z)]] == null || BlockLibrary.BlockDictionary[blocks[GetIndex(x , y+ 1, z)]].IsTransparent));
 	}
 
 	public bool negZTransparent(int x, int y, int z)
 	{
-		return ( (z == 0 && (BlockLibrary.BlockDictionary[negZChunk.blocks[GetIndex(x,y, chunkSizeZ - 1)]] == null || BlockLibrary.BlockDictionary[negZChunk.blocks[GetIndex(x,y, chunkSizeZ-1)]].IsTransparent))
+		return ( (z == 0 && (BlockLibrary.BlockDictionary[negZChunk.blocks[GetIndex(x,y, chunkSize - 1)]] == null || BlockLibrary.BlockDictionary[negZChunk.blocks[GetIndex(x,y, chunkSize-1)]].IsTransparent))
 			|| (z > 0 && (BlockLibrary.BlockDictionary[blocks[GetIndex(x, y, z - 1)]] == null || BlockLibrary.BlockDictionary[blocks[GetIndex(x , y, z- 1)]].IsTransparent)));
 	}
 	
 	public bool posZTransparent(int x, int y, int z)
 	{
-		return ((z == chunkSizeZ-1 && (BlockLibrary.BlockDictionary[posZChunk.blocks[GetIndex(x ,y, 0)]] == null || BlockLibrary.BlockDictionary[posZChunk.blocks[GetIndex(x ,y, 0)]].IsTransparent))
-			|| (z < chunkSizeZ-1 && (BlockLibrary.BlockDictionary[blocks[GetIndex(x , y, z+ 1)]] == null || BlockLibrary.BlockDictionary[blocks[GetIndex(x , y, z+ 1)]].IsTransparent)));
+		return ((z == chunkSize-1 && (BlockLibrary.BlockDictionary[posZChunk.blocks[GetIndex(x ,y, 0)]] == null || BlockLibrary.BlockDictionary[posZChunk.blocks[GetIndex(x ,y, 0)]].IsTransparent))
+			|| (z < chunkSize-1 && (BlockLibrary.BlockDictionary[blocks[GetIndex(x , y, z+ 1)]] == null || BlockLibrary.BlockDictionary[blocks[GetIndex(x , y, z+ 1)]].IsTransparent)));
 	}
 }
